@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.log
+.DS_Store
+
+# Generated outputs (canonical copies live on Cloudinary)
+output/
+tmp/
+
+# Local Claude Code config + uploaded skill archives
+.claude/
+*.zip
+.skill-extract/
