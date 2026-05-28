@@ -200,19 +200,23 @@ async function schedule(channelId, pdfUrl, postCaption, dueAt, docTitle, thumbna
       }
     }
   `;
+  // Buffer migrated assets to an ordered array of typed items (May 2026).
+  // Each entry specifies exactly one of: image | video | document | link.
   const input = {
     channelId,
     text: postCaption,
     schedulingType: 'automatic',
     mode: 'customScheduled',
     dueAt,
-    assets: {
-      documents: [{
-        url: pdfUrl,
-        title: docTitle,
-        thumbnailUrl,
-      }],
-    },
+    assets: [
+      {
+        document: {
+          url: pdfUrl,
+          title: docTitle,
+          thumbnailUrl,
+        },
+      },
+    ],
   };
   return gql(mutation, { input });
 }
