@@ -1,396 +1,221 @@
-# 🤖 LinkedIn Auto-Poster — Full Automation Pipeline
+# LinkedIn Auto-Poster
 
-## Project Owner
-- **Name:** Vineet (GitHub: Vandiator)
-- **Goal:** Fully automated LinkedIn carousel post generator that runs every week without any manual input
-- **Niche:** AI, Tech, Coding, Design
-- **Style:** Professional blue & white LinkedIn look (NOT dark YouTube thumbnail style)
+A fully automated weekly LinkedIn carousel generator. Every Monday at **09:00 India time (IST)**, GitHub Actions runs a pipeline that writes fresh AI/tech content, renders polished blue-and-white slides, and schedules the post on LinkedIn — all without touching a keyboard.
 
----
-
-## 📌 Project Status
-
-| Phase | Status | Description |
-|---|---|---|
-| Phase 1 — Base pipeline | ✅ Done | Brendan's repo cloned and working |
-| Phase 2 — Image generation | ✅ Done | Switched from OpenAI to Hugging Face FLUX |
-| Phase 3 — Content generation | ✅ Done | Groq (Llama 3.3) generates fresh slide content |
-| Phase 4 — Slide rendering | 🔄 In Progress | Puppeteer renders HTML slides as PNGs |
-| Phase 5 — Slide quality | ❌ Needs work | Current Puppeteer slides look bad, need redesign |
-| Phase 6 — Full automation | ❌ Not built yet | GitHub Actions weekly scheduler |
-| Phase 7 — Self-improvement | ❌ Future | Karpathy AutoResearch loop for content optimization |
-
----
-
-## 🏗️ Architecture Overview
-
-### Current Pipeline (Manual — Level 1)
 ```
-User runs commands manually
-         ↓
-node generate-content.js    ← Groq writes slide content from latest AI news
-         ↓
-node render-slides.js       ← Puppeteer renders HTML slides as PNGs
-         ↓
-node schedule-linkedin-post.js  ← Stitches PDF, uploads to Cloudinary, schedules via Buffer
-```
-
-### Target Pipeline (Fully Automated — Level 3)
-```
-GitHub Actions triggers every Monday 9am automatically
-         ↓
-generate-content.js runs    ← Groq fetches latest AI/Tech news and writes slide content
-         ↓
-render-slides.js runs       ← Puppeteer renders 6 beautiful slides as PNGs
-         ↓
-schedule-linkedin-post.js   ← PDF stitched, uploaded to Cloudinary, scheduled via Buffer API
-         ↓
-Post goes live on LinkedIn at scheduled time
-         ↓
-Zero human input required ✅
-```
-
-### Future Pipeline (Self-Improving — Level 4)
-```
-Same as Level 3 PLUS:
-         ↓
-AutoResearch loop (Karpathy style) analyzes post performance
-         ↓
-Claude Code agent reads engagement data
-         ↓
-Tests different content styles, hooks, formats
-         ↓
-Keeps what gets more engagement, discards what doesn't
-         ↓
-Content quality improves automatically every week
+                  Monday 09:00 IST
+                        │
+                        ▼
+            ┌─────────────────────────┐
+            │   GitHub Actions cron   │
+            └───────────┬─────────────┘
+                        │
+        ┌───────────────┼───────────────┐
+        ▼               ▼               ▼
+  generate-content   render-slides   schedule-linkedin-post
+  (Groq + HN RSS)    (Pollinations   (Cloudinary PDF
+                      + Puppeteer)    + Buffer API)
+        │               │               │
+        └───────────────┼───────────────┘
+                        ▼
+                 LinkedIn post live
 ```
 
 ---
 
-## 📁 File Structure
+## What you get every week
 
-```
-claude-linkedin-auto-poster/
-│
-├── .env                          ← All API keys (never commit this!)
-├── .env.example                  ← Template showing required keys
-├── .gitignore                    ← Ensures .env is never pushed to GitHub
-│
-├── package.json                  ← Node.js dependencies
-│
-├── carousel.js                   ← OLD: Used Gemini/HuggingFace for image gen (REPLACED)
-├── generate-content.js           ← NEW: Groq generates slide content from AI news
-├── render-slides.js              ← NEW: Puppeteer renders HTML slides as PNGs
-├── schedule-linkedin-post.js     ← Stitches PDF + schedules via Buffer API
-│
-├── client.js                     ← Cloudinary SDK configuration
-├── upload.js                     ← Cloudinary upload helper function
-├── gallery.js                    ← Local gallery server to preview images
-├── list.js                       ← Lists uploaded carousels
-│
-├── Style-Guide/                  ← Brand reference images (not used by current pipeline)
-│   └── *.jpg                     ← Sample images from Brendan's original repo
-│
-├── output/                       ← Generated files (gitignored)
-│   ├── slide-content.json        ← JSON content from generate-content.js
-│   ├── slide-1-hook.png          ← Rendered slide images
-│   ├── slide-2-*.png
-│   ├── slide-3-*.png
-│   ├── slide-4-*.png
-│   ├── slide-5-*.png
-│   ├── slide-6-cta.png
-│   └── carousel-tech-ai-news.pdf ← Final PDF for LinkedIn
-│
-└── .github/
-    └── workflows/
-        └── weekly-post.yml       ← GitHub Actions automation (NOT BUILT YET)
-```
+- **5 slides** (hook → stat → list → comparison → CTA), 1080×1080, rendered at 2× pixel density
+- **AI-generated hero illustrations** on every slide via [Pollinations.ai](https://pollinations.ai) (free, no key)
+- **Crisp typography** (Inter from Google Fonts) and **inline SVG icons** — no emoji, no blurry text
+- **A LinkedIn-style caption** written by Groq (Llama 3.3 70B) with hashtags
+- **Auto-stitched PDF** uploaded to Cloudinary, scheduled in Buffer for Monday 09:00 IST
 
 ---
 
-## 🔑 Environment Variables (.env)
+## One-time setup
 
-```env
-# Cloudinary — Image hosting
-CLOUDINARY_CLOUD_NAME=dad1bd3st
-CLOUDINARY_API_KEY=your_key
-CLOUDINARY_API_SECRET=your_secret
-PORT=3000
+### 1. Add API keys to GitHub Secrets
 
-# Hugging Face — Image generation (currently not in use, replaced by Puppeteer)
-HF_API_KEY=hf_your_key
+Go to **your repo on GitHub → Settings → Secrets and variables → Actions → New repository secret** and add these one at a time:
 
-# Groq — Free AI for content generation (Llama 3.3 70B model)
-GROQ_API_KEY=gsk_your_key
+| Secret name             | Where to get it                                                   |
+| ----------------------- | ----------------------------------------------------------------- |
+| `CLOUDINARY_CLOUD_NAME` | [Cloudinary console](https://console.cloudinary.com/) → Dashboard |
+| `CLOUDINARY_API_KEY`    | Cloudinary console → Dashboard → API Keys                         |
+| `CLOUDINARY_API_SECRET` | Cloudinary console → Dashboard → API Keys                         |
+| `GROQ_API_KEY`          | [console.groq.com/keys](https://console.groq.com/keys) (free)     |
+| `BUFFER_API_TOKEN`      | [publish.buffer.com/settings/api](https://publish.buffer.com/settings/api) |
+| `LINKEDIN_CHANNEL_ID`   | Your Buffer channel ID for LinkedIn (already known: `6a0a27cd090476fb992ea29c`) |
 
-# Buffer — LinkedIn post scheduling
-BUFFER_API_TOKEN=your_token
-LINKEDIN_CHANNEL_ID=6a0a27cd090476fb992ea29c
+Optional (only if you want fallbacks for image generation):
 
-# GitHub Actions secrets (same keys, added in GitHub repo settings)
-# Settings → Secrets and variables → Actions → New repository secret
-```
+| Secret name           | Notes                                                         |
+| --------------------- | ------------------------------------------------------------- |
+| `HF_API_KEY`          | Hugging Face read token — used if Pollinations is down        |
+| `POLLINATIONS_TOKEN`  | Only if you signed up at auth.pollinations.ai for higher rate limits |
+
+### 2. Enable PDF delivery in Cloudinary (one-time)
+
+Go to **[Cloudinary Security settings](https://console.cloudinary.com/settings/security)** and turn ON **"Allow delivery of PDF and ZIP files"**. Without this, Buffer can't fetch the carousel PDF.
+
+### 3. Test it once
+
+In your repo → **Actions tab → Weekly LinkedIn Post → Run workflow**.
+
+If everything is configured, you'll see a green checkmark in 3–5 minutes and a scheduled post appear in your Buffer queue.
+
+That's it. From now on, it runs every Monday at 09:00 IST automatically.
 
 ---
 
-## 📦 Dependencies
+## How it works
 
-```json
-{
-  "@google/genai": "^2.3.0",      // Gemini SDK (not currently used)
-  "cloudinary": "^2.5.1",         // Image/file hosting
-  "dotenv": "^16.4.5",            // Load .env variables
-  "express": "^4.21.1",           // Local gallery server
-  "openai": "^4.77.0",            // OpenAI SDK (not currently used)
-  "pdf-lib": "^1.17.1",           // Stitch PNGs into PDF
-  "puppeteer": "latest",           // Headless browser for rendering slides
-  "groq-sdk": "latest"             // Groq AI for content generation
-}
-```
+### `generate-content.js` — the writer
 
-Install all:
+1. Pulls the top stories from Hacker News (`https://hnrss.org/best?count=20`).
+2. Filters them for AI / coding / tech / design keywords.
+3. Sends the headlines plus today's date to **Groq (Llama 3.3 70B)** with a structured prompt.
+4. Gets back JSON describing 5 slides (hook + 3 topic + CTA), each with `headline`, `subheadline`, `content`, `layout`, and an `imagePrompt` for the hero illustration.
+5. Saves to `output/slide-content.json`.
+
+### `render-slides.js` — the designer
+
+For every slide:
+
+1. Sends the `imagePrompt` to **Pollinations.ai** (FLUX.1) and saves the hero image.
+2. If Pollinations fails, falls back to **Hugging Face FLUX.1-schnell**.
+3. If both fail, uses a soft blue-gradient placeholder.
+4. Picks one of 5 layout templates based on `slide.layout`:
+   - `hook` — 4 numbered teaser cards + hero image
+   - `stat` — giant percentage/number + supporting bullets
+   - `list` — numbered list with hero accent
+   - `comparison` — old way vs new way, two columns
+   - `cta` — green checklist + follow button
+5. Renders the slide as HTML (Inter font, SVG icons, soft shadows) and screenshots it with **Puppeteer** at 1080×1080 @ 2× DPI.
+6. Uploads the PNG to **Cloudinary** under `carousel/<slug>/<date>/`.
+7. Saves `output/slide-results.json` so the next step knows where everything lives.
+
+### `schedule-linkedin-post.js` — the publisher
+
+1. Stitches the rendered PNGs into a single PDF with `pdf-lib`.
+2. Uploads the PDF to Cloudinary as `resource_type: raw`.
+3. HEAD-checks the public URL (catches the "PDF delivery is disabled" issue early).
+4. Computes **next Monday 09:00 IST** (or the upcoming Monday if today is past it).
+5. Calls Buffer's GraphQL API to schedule a LinkedIn document post with the PDF, caption, and the slide-1 image as the thumbnail.
+
+### `auto-post.js` — the conductor
+
+Single entry point that runs the three steps in sequence with friendly logging. This is what GitHub Actions calls.
+
+---
+
+## Design system
+
+| Token         | Hex       | Use                                 |
+| ------------- | --------- | ----------------------------------- |
+| LinkedIn Blue | `#0A66C2` | Accents, highlights, brand bar      |
+| Blue Dark     | `#004182` | CTA gradient end                    |
+| Blue Light    | `#E8F0FB` | Pill backgrounds                    |
+| Navy          | `#0D1B2A` | Headlines, body                     |
+| Grey          | `#4A5568` | Subtext                             |
+| Soft Grey     | `#94A3B8` | "Old way" comparison column         |
+| Green         | `#10B981` | Checklist icons on CTA              |
+| Background    | `#F7F9FC` | Slide background                    |
+
+Typography: **Inter** (400 / 500 / 600 / 700 / 800 / 900) loaded from Google Fonts on every render.
+
+Icons: 12 inline SVGs (sparkle, lightning, brain, code, layers, rocket, globe, chart, check, x, arrow-right, swipe-right) — picked per slide based on keywords.
+
+---
+
+## Running locally
+
+You don't need to. GitHub Actions handles the weekly run for you.
+
+If you want to test locally anyway:
+
 ```bash
+git clone https://github.com/Vandiator/Linkedin-Automation.git
+cd Linkedin-Automation
+cp .env.example .env       # fill in your API keys
 npm install
+node auto-post.js          # runs the full pipeline
+```
+
+You can also run the steps individually:
+
+```bash
+npm run generate    # generate-content.js  → output/slide-content.json
+npm run render      # render-slides.js     → 5 PNGs + slide-results.json
+npm run schedule    # schedule-linkedin-post.js → schedule on Buffer
 ```
 
 ---
 
-## 🎨 Design System
+## Troubleshooting
 
-### Colors
-| Variable | Hex | Usage |
-|---|---|---|
-| LinkedIn Blue | `#0A66C2` | Accents, borders, highlight blocks, bottom bar |
-| Navy | `#0D1B2A` | Headlines, bold text |
-| Grey | `#4A5568` | Subtext, descriptions |
-| White | `#FFFFFF` | Card backgrounds |
-| Background | `#F7F9FC` | Slide background |
+**The workflow ran but no post appeared on LinkedIn.**
+Buffer schedules the post for Monday 09:00 IST. If you ran the workflow on, say, Wednesday, the post is queued but won't go live until Monday. Check **publish.buffer.com → Queue**.
 
-### Slide Structure (6 slides per carousel)
-| Slide | ID | Purpose |
-|---|---|---|
-| 1 | `slide-1-hook` | Hook — grabs attention, shows what's inside |
-| 2 | `slide-2` | Topic 1 — first main point with stats/visuals |
-| 3 | `slide-3` | Topic 2 — second main point |
-| 4 | `slide-4` | Topic 3 — third main point |
-| 5 | `slide-5` | Topic 4 — fourth main point |
-| 6 | `slide-6-cta` | CTA — what's coming next + follow prompt |
+**The workflow failed.**
+Open the failed run in the **Actions** tab. If artifacts are attached (PNGs / JSON / PDF), download them to inspect what was generated. The most common causes:
 
-### Slide Design Rules
-- Background: clean white or very light grey (#F7F9FC)
-- NO dark backgrounds, NO gradients, NO glow effects
-- Headlines: bold, uppercase, deep navy
-- Key words: inside solid LinkedIn-blue highlight block with white text
-- Layout: minimal, structured, lots of breathing room
-- Icons: flat 2D line-art style in blue and navy
-- Stats: inside rounded cards with thin blue border and blue left accent bar
-- Bottom of every slide: thin blue bar with "Tech & AI Weekly" centered
-- Format: 1080x1080px (1:1 square)
-- Mood: authoritative, professional — like a McKinsey slide meets LinkedIn post
+- A required GitHub Secret is missing or wrong — re-check **Settings → Secrets and variables → Actions**.
+- Cloudinary's "Allow delivery of PDF and ZIP files" is still OFF — flip it on.
+- Buffer API token expired — regenerate at publish.buffer.com/settings/api.
+
+**Pollinations.ai is slow / failing.**
+The pipeline auto-falls-back to Hugging Face if you've added `HF_API_KEY` to Secrets. If that also fails, slides render with a clean gradient instead of a hero image — the post still ships.
+
+**Slides look different from what I expected.**
+Layouts rotate by content type. Edit the prompts in `generate-content.js` to bias toward more `stat`, `list`, or `comparison` layouts.
 
 ---
 
-## 🔄 How Each File Works
-
-### `generate-content.js`
-- **Input:** Nothing (uses current date to determine relevant news)
-- **Process:** Calls Groq API (Llama 3.3 70B) with a prompt asking for latest AI/Tech news
-- **Output:** `output/slide-content.json` with topic, post caption, and 6 slide objects
-- **Run:** `node generate-content.js`
-
-### `render-slides.js`
-- **Input:** `output/slide-content.json`
-- **Process:** 
-  1. Reads slide content JSON
-  2. Generates HTML for each slide using the design system above
-  3. Puppeteer launches headless Chrome
-  4. Screenshots each slide at 1080x1080px
-  5. Uploads each PNG to Cloudinary
-- **Output:** 6 PNG files in `output/` + Cloudinary URLs
-- **Run:** `node render-slides.js`
-- **⚠️ Current Issue:** Slide quality is poor — HTML template needs redesign
-
-### `schedule-linkedin-post.js`
-- **Input:** PNG files in `output/` + manual THUMBNAIL_URL and DUE_AT
-- **Process:**
-  1. Reads all 6 PNG files
-  2. Stitches them into a PDF using pdf-lib
-  3. Uploads PDF to Cloudinary as `resource_type: raw`
-  4. Verifies PDF is publicly accessible
-  5. Calls Buffer GraphQL API to schedule post
-- **Output:** Scheduled LinkedIn post
-- **Run:** `node schedule-linkedin-post.js`
-- **⚠️ Note:** Currently requires manual update of THUMBNAIL_URL and DUE_AT
-
----
-
-## ⚠️ Known Issues & What Needs to Be Fixed
-
-### Issue 1 — Slide Quality (PRIORITY)
-- **Problem:** Puppeteer-rendered slides look plain and unprofessional
-- **What was tried:** Hugging Face FLUX (bad text rendering), Gemini (quota issues), Puppeteer HTML (too basic)
-- **Solution needed:** Redesign the HTML template in `render-slides.js` with better typography, real icons (SVG), visual illustrations, and more polished layout
-- **Alternative:** Use a paid image API like Recraft V3 or Ideogram
-
-### Issue 2 — schedule-linkedin-post.js Still Manual
-- **Problem:** THUMBNAIL_URL and DUE_AT need to be manually updated each time
-- **Solution needed:** Auto-read thumbnail URL from carousel results, auto-calculate next Monday 9am for DUE_AT
-
-### Issue 3 — GitHub Actions Not Built Yet
-- **What's needed:** `.github/workflows/weekly-post.yml` that:
-  - Runs on schedule (every Monday 9am India time = 3:30am UTC)
-  - Has all API keys as GitHub Secrets
-  - Runs generate-content.js → render-slides.js → schedule-linkedin-post.js in sequence
-
----
-
-## 🚀 What Needs to Be Built Next (In Order)
-
-### Step 1 — Fix Slide Quality
-Redesign `render-slides.js` HTML template to look professional:
-- Add real SVG icons
-- Better typography with Google Fonts
-- Visual data representations (charts, progress bars)
-- Polished card designs with shadows
-- Consider splitting into visual illustration + text overlay
-
-### Step 2 — Make schedule-linkedin-post.js Fully Automatic
-```js
-// Auto-set thumbnail from render-slides output
-const THUMBNAIL_URL = results[0].url; // from render-slides.js output
-
-// Auto-calculate next Monday 9am India time
-function getNextMonday9am() {
-  const now = new Date();
-  const day = now.getDay();
-  const daysUntilMonday = day === 1 ? 7 : (8 - day) % 7;
-  const nextMonday = new Date(now);
-  nextMonday.setDate(now.getDate() + daysUntilMonday);
-  nextMonday.setHours(9, 0, 0, 0);
-  return nextMonday.toISOString();
-}
-```
-
-### Step 3 — Create Master Script `auto-post.js`
-Single script that runs everything in sequence:
-```js
-// auto-post.js
-import { generateContent } from './generate-content.js';
-import { renderSlides } from './render-slides.js';
-import { schedulePost } from './schedule-linkedin-post.js';
-
-async function main() {
-  const content = await generateContent();
-  const slides = await renderSlides(content);
-  await schedulePost(slides);
-  console.log('✓ Post scheduled successfully!');
-}
-main();
-```
-
-### Step 4 — Build GitHub Actions Workflow
-```yaml
-# .github/workflows/weekly-post.yml
-name: Weekly LinkedIn Post
-on:
-  schedule:
-    - cron: '30 3 * * 1'  # Every Monday 3:30am UTC = 9am India
-  workflow_dispatch:       # Allow manual trigger from GitHub UI
-
-jobs:
-  post:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm install
-      - run: node auto-post.js
-        env:
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          HF_API_KEY: ${{ secrets.HF_API_KEY }}
-          BUFFER_API_TOKEN: ${{ secrets.BUFFER_API_TOKEN }}
-          LINKEDIN_CHANNEL_ID: ${{ secrets.LINKEDIN_CHANNEL_ID }}
-```
-
-### Step 5 — Add GitHub Secrets
-In GitHub repo → Settings → Secrets and variables → Actions → Add each key from .env
-
----
-
-## 🔮 Future Vision (Level 4 — Self-Improving)
-
-Based on Karpathy's AutoResearch concept (released March 2026, 66k+ GitHub stars):
+## File map
 
 ```
-After each post goes live:
-         ↓
-Track LinkedIn engagement metrics (views, likes, comments, shares)
-         ↓
-AutoResearch loop runs (Claude Code agent)
-         ↓
-Agent reads past post performance data
-         ↓
-Proposes improvements to slide content style, hooks, CTAs
-         ↓
-Tests new approach next week
-         ↓
-Keeps what performs better (ratchet mechanism)
-         ↓
-Content quality self-improves every week
+.
+├── .github/workflows/weekly-post.yml   ← GitHub Actions cron + manual trigger
+├── auto-post.js                        ← Single entry point (calls the 3 steps)
+├── generate-content.js                 ← Step 1: Groq + HN RSS → slide JSON
+├── render-slides.js                    ← Step 2: Pollinations + Puppeteer → PNGs
+├── schedule-linkedin-post.js           ← Step 3: PDF + Cloudinary + Buffer
+├── client.js                           ← Cloudinary SDK setup
+├── upload.js                           ← Cloudinary upload helper
+├── carousel.js                         ← Legacy (HF FLUX direct) — not used by pipeline
+├── gallery.js, list.js, public/        ← Local Cloudinary preview server
+├── package.json
+├── .env.example                        ← Template for local .env
+└── output/                             ← Generated files (gitignored)
+    ├── slide-content.json              ← Step 1 output
+    ├── hero-slide-*.png                ← AI-generated hero images
+    ├── slide-*.png                     ← Final rendered slides
+    ├── slide-results.json              ← Step 2 output
+    └── carousel-*.pdf                  ← Stitched PDF for LinkedIn
 ```
 
-This requires:
-- LinkedIn API access for engagement metrics
-- Claude Code installed locally or as GitHub Action
-- A `program.md` file describing what "good content" looks like
-- A `results.json` tracking post performance over time
+---
+
+## What's NOT in this version (yet)
+
+- **Self-improvement loop** — analyzing past post engagement and adjusting the prompt automatically. Tracked as a future Phase 7.
+- **Live web scraping** — content uses Hacker News RSS as its only signal. Adding TechCrunch, The Verge, etc. would give richer context.
+- **Multi-channel publishing** — pipeline is LinkedIn-only. Same PDF could be posted to X / IG carousel with minor work.
 
 ---
 
-## 📚 Reference Videos
+## Tech stack
 
-| Creator | Video | What it covers |
-|---|---|---|
-| Brendan Jowett | [Claude LinkedIn Auto-Poster](https://youtu.be/1q0RmehD8SU) | Original repo — manual pipeline with Claude Code |
-| Duncan Rogoff | [5X LinkedIn Engagement](https://youtu.be/TGVhE4XxU3Q) | n8n workflow, scrapes your style, auto-generates text posts |
-| Duncan Rogoff | [Claude Code + Karpathy AutoResearch](https://youtu.be/CtB4HP7kHyw) | Self-improving LinkedIn agent using AutoResearch loop |
-
----
-
-## 🛠️ Tech Stack
-
-| Tool | Purpose | Cost |
-|---|---|---|
-| Node.js | Runtime | Free |
-| Groq API | AI content generation (Llama 3.3 70B) | Free |
-| Puppeteer | HTML slide rendering | Free |
-| Cloudinary | Image/PDF hosting | Free tier |
-| Buffer | LinkedIn post scheduling | Free tier |
-| GitHub Actions | Automation scheduler | Free (2000 min/month) |
-| Hugging Face | Image generation (backup) | Free tier |
-
----
-
-## 🔐 Security Notes
-
-- **Never commit `.env`** to GitHub — it's in `.gitignore`
-- All API keys go in **GitHub Secrets** for the Actions workflow
-- Cloudinary `ALLOW PDF & ZIP delivery` must be enabled in security settings
-- Buffer uses GraphQL API — token scoped to LinkedIn channel only
-
----
-
-## 📞 If Starting Fresh With a New AI
-
-Tell the AI:
-1. This is a Node.js project (ES modules — uses `import` not `require`)
-2. We use Groq for content generation, Puppeteer for rendering, Cloudinary for hosting, Buffer for scheduling
-3. The immediate priority is **fixing slide quality** in `render-slides.js`
-4. After that, build `auto-post.js` master script and `.github/workflows/weekly-post.yml`
-5. The LinkedIn Channel ID is already known: `6a0a27cd090476fb992ea29c`
-6. All credentials are already in `.env` — just need GitHub Secrets for Actions
+| Tool           | Purpose                       | Cost                      |
+| -------------- | ----------------------------- | ------------------------- |
+| Node.js 20     | Runtime                       | Free                      |
+| Groq (Llama 3.3 70B) | Content generation      | Free                      |
+| Pollinations.ai (FLUX) | Hero illustrations    | Free, no API key needed   |
+| Hugging Face FLUX-schnell | Image fallback     | Free tier                 |
+| Puppeteer      | HTML → PNG                    | Free                      |
+| pdf-lib        | PNG → PDF                     | Free                      |
+| Cloudinary     | Image + PDF hosting           | Free tier                 |
+| Buffer         | LinkedIn scheduling           | Free tier                 |
+| GitHub Actions | Weekly cron runner            | Free (2000 min/mo)        |

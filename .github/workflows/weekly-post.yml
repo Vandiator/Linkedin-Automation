@@ -1,0 +1,84 @@
+name: Weekly LinkedIn Post
+
+# Runs the full pipeline (generate-content → render-slides → schedule-linkedin-post)
+# every Monday at 09:00 Asia/Kolkata (IST = UTC+5:30 → 03:30 UTC).
+# You can also click "Run workflow" in the Actions tab to trigger it manually.
+on:
+  schedule:
+    - cron: '30 3 * * 1'   # 03:30 UTC every Monday = 09:00 IST
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual run (optional, just for logs)'
+        required: false
+        default: 'manual test'
+
+# Don't let two runs stack on top of each other (e.g. cron + manual at same time).
+concurrency:
+  group: linkedin-weekly-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    name: Generate, render and schedule the carousel
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      # Cloudinary
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY:    ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      # Groq
+      GROQ_API_KEY:          ${{ secrets.GROQ_API_KEY }}
+      # Buffer + LinkedIn
+      BUFFER_API_TOKEN:      ${{ secrets.BUFFER_API_TOKEN }}
+      LINKEDIN_CHANNEL_ID:   ${{ secrets.LINKEDIN_CHANNEL_ID }}
+      # Optional fallbacks
+      POLLINATIONS_TOKEN:    ${{ secrets.POLLINATIONS_TOKEN }}
+      HF_API_KEY:            ${{ secrets.HF_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install system libraries Puppeteer needs
+        # Most are pre-installed on ubuntu-latest, but we apt-install the
+        # known-required ones to be safe across runner image changes.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates fonts-liberation libasound2t64 libatk-bridge2.0-0 \
+            libatk1.0-0 libcups2 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0 \
+            libnspr4 libnss3 libpango-1.0-0 libx11-6 libx11-xcb1 libxcb1 \
+            libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 \
+            libxss1 xdg-utils 2>/dev/null || \
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates fonts-liberation libasound2 libatk-bridge2.0-0 \
+            libatk1.0-0 libcups2 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0 \
+            libnspr4 libnss3 libpango-1.0-0 libx11-6 libx11-xcb1 libxcb1 \
+            libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 \
+            libxss1 xdg-utils
+
+      - name: Run weekly auto-post pipeline
+        run: node auto-post.js
+
+      - name: Upload generated artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-output-${{ github.run_id }}
+          path: |
+            output/*.png
+            output/*.pdf
+            output/*.json
+          if-no-files-found: ignore
+          retention-days: 14
